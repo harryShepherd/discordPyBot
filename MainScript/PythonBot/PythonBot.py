@@ -105,4 +105,4 @@ async def on_message(message):
 #    await ctx.channel.send("So you want me to set a reminder for {0} at {1} for '{2}'?".format(chosenDate, chosenTime, reminder))
 
 
-bot.run('NTE0MzY1NzQwOTg0MzAzNjQ3.W_PObQ.jHGl9wMRvcd_vgu7A8tK4WiBjCw')
+bot.run('XXX')

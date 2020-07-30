@@ -7,20 +7,23 @@
 #
 #******************************************************/
 from discord.ext import commands
+from threading import Timer
 import asyncio
 import json
+import time
 import datetime
 
-#   Don't touch. Magic stuff.
 bot = commands.Bot(command_prefix='.')
 
 #                                       TODO:
 #
 #
 #                                               - Continue work on the setreminder command.
+#                                                   - Start with a time function
 #                                                   - Send user DM on reminder
 
 bannedWordList = []
+reminderTime = ''
 
 def clearBannedWordList():
     bannedWordList = []
@@ -48,11 +51,24 @@ async def on_message(message):
         return m and m.author == message.author
 
 
-    #   Bans the naughty naughty words >:)))
+    #   Bans the naughty naughty words
     for word in bannedWordList:
         if word in message.content.lower():
             print("Deleted message '{0.content}' due to containing banned phrase.".format(message))
             await message.delete()
+
+    #   Sends you the whole Shrek script line-by-line in your DM's. :)
+    if message.content.startswith('.shrek'):
+        user = bot.get_user(message.author.id)
+        with open('ShrekScript.txt', 'r') as fp:
+            for cnt, line in enumerate(fp):
+                try:
+                    await user.send(line)
+                    print(line)
+                    time.sleep(0.5)
+                except:
+                    pass
+        fp.close()
 
     #   Adds words to naughty list 
     #   This took so much longer than it needed to...
@@ -68,41 +84,6 @@ async def on_message(message):
             fp.close()
             await message.channel.send("Added {0} to the list of banned words.".format(chosenWord.content))
             createBannedWordList()
-
-    if message.content.startswith('.test'):
-        await message.channel.send('Test')
-
-    if message.content.startswith('.setreminder'):
-        date = ""
-        reminder = ""
-        await message.channel.send("On what day would you like to set this reminder {0.author.mention}?".format(message))
-        try:
-            chosenDate = await bot.wait_for('message', check=check, timeout = 10.0)
-        except asyncio.TimeoutError:
-            await message.channel.send("Took too long idiot")
-        else:
-            await message.channel.send("You said {0}".format(chosenDate.content))
-
-            if(int(chosenDate.content) < int(datetime.date.day)):
-                chosenMonth = int(datetime.date.month) + 1
-                if(chosenMonth == 1):
-                    chosenYear = int(datetime.date.year) + 1
-                else:
-                    chosenYear = int(datetime.date.year)
-            print(str(chosenYear) + str(chosenMonth) + chosenDate.content)
-
-#@bot.command()
-#async def setreminder(ctx):
-#    date = ""
-#    reminder = ""
-#    await ctx.channel.send("On what day would you like to set this reminder {0.author.mention}?".format(ctx.message))
-#    chosenDate = bot.wait_for('message', check = False, timeout = 10.0)
-#    await ctx.channel.send("What time would you like to be reminded {0.author.mention}?".format(ctx.message))
-#    chosenTime = bot.wait_for('message', check = False, timeout = 10.0)
-#    await ctx.channel.send("And what would you like to be reminded about {0.author.mention}?".format(ctx.message))
-#    TempReminder = bot.wait_for('message', check = False, timeout = 10.0)
-#    reminder = TempReminder.content()
-#    await ctx.channel.send("So you want me to set a reminder for {0} at {1} for '{2}'?".format(chosenDate, chosenTime, reminder))
 
 
 bot.run('XXX')

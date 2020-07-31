@@ -7,12 +7,13 @@
 #
 #******************************************************/
 import discord
+from discord.ext import commands
 from threading import Timer
 import asyncio
 import time
 import random
 
-bot = discord.Client()
+bot = commands.Bot(command_prefix='.')
 
 #                                       TODO:
 #
@@ -24,10 +25,10 @@ bot = discord.Client()
 #       ban - Bans mentioned user                                                           []
 #       help - Displays all the available commands for your permission level                []
 #       insult - Gives you a random insult                                                  []
-#       invite - Create an invite for the server                                            []
+#       invite - Create an invite for the server                                            [x]
 #       kick - Kicks mentioned user                                                         []
 #       mute - Mutes and unmutes mentioned user                                             []
-#       ping - Ping/Pong command. I wonder what this does? /sarcasm                         []
+#       ping - Ping/Pong command. I wonder what this does? /sarcasm                         [x]
 #       prefix - Change the prefix for your server                                          []
 #       purge - Purges X amount of messages from a given channel                            []
 #       quote - Random famous quote                                                         []
@@ -40,27 +41,6 @@ bot = discord.Client()
 
 #   List of pre-defined variables
 bannedWordList = []
-MagicBallPhrasesList = [
-    "As I see it, yes.",
-    "Ask again later.",
-    "Better not tell you now.",
-    "Cannot predict now.",
-    "Concentrate and ask again.",
-    "Don’t count on it.",
-    "It is certain.",
-    "It is decidedly so.",
-    "Most likely.",
-    "My reply is no.",
-    "My sources say no.",
-    "Outlook not so good.",
-    "Outlook good.",
-    "Reply hazy, try again.",
-    "Signs point to yes.",
-    "Very doubtful.",
-    "Without a doubt.",
-    "Yes.",
-    "Yes – definitely.",
-    "You may rely on it."]
 
 def createBannedWordList():
     with open('BannedWords.txt', 'r') as fp:
@@ -83,7 +63,7 @@ async def on_ready():
 @bot.event
 async def on_message(message):
 
-    #   Used in most commands to make sure the bot listens to the person who initiated the command.
+    #   Used in most commands to make sure the bot listens to the person who initiated the command
     def check(m):
         return m and m.author == message.author
 
@@ -108,16 +88,51 @@ async def on_message(message):
             fp.close()
             await message.channel.send("Added {0} to the list of banned words.".format(chosenWord.content))
             BannedWordList = []
+    #   This allows the bot to listen to commands
+    await bot.process_commands(message)
 
-    #   A classic 8ball command
-    if message.content.startswith('.8ball'):
-        await message.channel.send('What is your query for the magic 8ball?')       
-        try:
-            await bot.wait_for('message', check=check, timeout = 10.0)
-        except asyncio.TimeoutError:
-            await message.channel.send('You took too long to respond.')
-        else:
-            await message.channel.send(MagicBallPhrasesList[random.randint(0,(len(MagicBallPhrasesList)) - 1)] + " {0}".format(message.author.mention))
+@bot.command()
+async def avatar(ctx, *, avamember : discord.Member=None):
+    userAvatarUrl = avamember.avatar_url
+    await ctx.send(userAvatarUrl)
 
+
+#   Classic magic 8ball command
+@bot.command(aliases=['8ball'])
+async def _8ball(ctx, *, question):
+    MagicBallPhrasesList = [
+    "As I see it, yes.",
+    "Ask again later.",
+    "Better not tell you now.",
+    "Cannot predict now.",
+    "Concentrate and ask again.",
+    "Don’t count on it.",
+    "It is certain.",
+    "It is decidedly so.",
+    "Most likely.",
+    "My reply is no.",
+    "My sources say no.",
+    "Outlook not so good.",
+    "Outlook good.",
+    "Reply hazy, try again.",
+    "Signs point to yes.",
+    "Very doubtful.",
+    "Without a doubt.",
+    "Yes.",
+    "Yes – definitely.",
+    "You may rely on it."]
+
+    await ctx.send("Your question: {0}\nThe Magic 8ball's answer: {1}".format(question, MagicBallPhrasesList[random.randint(0,(len(MagicBallPhrasesList)) - 1)] + " {0}".format(message.author.mention)))
+  
+#   Creates an invite that lasts 5 minutes and send it to the chat
+@bot.command()
+async def createinvite():
+       link = await message.channel.create_invite(max_age = 300)
+       await message.channel.send("Here is an instant invite to your server: " + str(link))
+
+#   Responds with the latency time of the bot
+@bot.command()
+async def ping():
+    await message.channel.send('Pong! {0}ms'.format(round(bot.latency, 3)))
 
 bot.run('XXX')

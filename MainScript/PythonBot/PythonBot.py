@@ -21,12 +21,13 @@ bot = commands.Bot(command_prefix='.')
 #
 #       8ball - Gives random response like a magic 8ball                                    [x]
 #       autorole - Set if you want to set a role to people when they join your server       []
-#       avatar - Shows you your Avatar                                                      []
-#       ban - Bans mentioned user                                                           []
+#       avatar - Shows you your Avatar                                                      [x]
+#       ban - Bans mentioned user                                                           [x]
 #       help - Displays all the available commands for your permission level                []
 #       insult - Gives you a random insult                                                  []
+#       meirl - Gives a random top post from the me_irl subreddit                           []
 #       invite - Create an invite for the server                                            [x]
-#       kick - Kicks mentioned user                                                         []
+#       kick - Kicks mentioned user                                                         [x]
 #       mute - Mutes and unmutes mentioned user                                             []
 #       ping - Ping/Pong command. I wonder what this does? /sarcasm                         [x]
 #       prefix - Change the prefix for your server                                          []
@@ -91,6 +92,7 @@ async def on_message(message):
     #   This allows the bot to listen to commands
     await bot.process_commands(message)
 
+#   Sends the tagged user's avatar
 @bot.command()
 async def avatar(ctx, *, avamember : discord.Member=None):
     userAvatarUrl = avamember.avatar_url
@@ -134,5 +136,45 @@ async def createinvite():
 @bot.command()
 async def ping():
     await message.channel.send('Pong! {0}ms'.format(round(bot.latency, 3)))
+
+#   Kicks user that is tagged in the message
+@bot.command(pass_context=True)
+@commands.has_permissions(kick_members=True)
+async def kick(ctx, target: discord.Member, *, reason):
+    await target.kick(reason=reason)
+    await ctx.send("User {0} was kicked from the server.\nReason: {1}".format(target, reason))
+
+@kick.error
+async def kick_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("A reason is required.")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send("That user doesn't exist.")
+
+#   Bans user that is tagged in the message
+@bot.command(pass_context=True)
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, target: discord.Member, *, reason):
+    await target.ban(reason=reason)
+    await ctx.send("User {0} was banned from the server.\nReason: {1}".format(target, reason))
+
+@ban.error
+async def ban_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("A reason is required.")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send("That user doesn't exist.")
+
+#   Deletes x amount of messages from the channel the user uses this command in
+@bot.command()
+@commands.has_permissions(manage_messages=True)
+async def purge(ctx, limit: int):
+    amount = await ctx.channel.purge(limit=limit)
+    await ctx.send("Deleted {} messsages".format(len(amount)))
+
+@purge.error
+async def purge_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("You need to specify how many messages you want me to purge.")
 
 bot.run('XXX')

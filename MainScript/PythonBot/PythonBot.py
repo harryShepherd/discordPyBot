@@ -9,40 +9,24 @@
 import discord
 from discord.ext import commands
 from threading import Timer
+import json
 import asyncio
 import time
 import random
-
-bot = commands.Bot(command_prefix='.')
-
-#                                       TODO:
+#                                       TODO:   
 #
 #   This is a list of commands that I plan to add to the bot in the future:
 #
-#       8ball - Gives random response like a magic 8ball                                    [x]
-#       autorole - Set if you want to set a role to people when they join your server       []
-#       avatar - Shows you your Avatar                                                      [x]
-#       ban - Bans mentioned user                                                           [x]
-#       help - Displays all the available commands for your permission level                []
-#       insult - Gives you a random insult                                                  []
-#       meirl - Gives a random top post from the me_irl subreddit                           []
-#       invite - Create an invite for the server                                            [x]
-#       kick - Kicks mentioned user                                                         [x]
-#       mute - Mutes and unmutes mentioned user                                             []
-#       ping - Ping/Pong command. I wonder what this does? /sarcasm                         [x]
-#       prefix - Change the prefix for your server                                          []
-#       purge - Purges X amount of messages from a given channel                            []
-#       quote - Random famous quote                                                         []
-#       subcount - Shows the subcount of a youtuber                                         []
-#       urban - Search urban dictonary                                                      []
-#       youtube - Searches youtube                                                          []
-#       osu - Show your osu stats                                                           []
+#       autorole - Set if you want to set a role to people when they join your server
+#       gag - Prevents a user from typing in any channel for x amount of seconds
+#       mute - Mutes and unmutes mentioned user
+#       meirl - Gives a random top post from the me_irl subreddit
+#       subcount - Shows the subcount of a youtube channel
+#       urban - Search urban dictonary
+#       youtube - Searches youtube
+#       osu - Show your osu stats
 
-
-
-#   List of pre-defined variables
 bannedWordList = []
-
 def createBannedWordList():
     with open('BannedWords.txt', 'r') as fp:
         print("Opening BannedWords.txt in read mode")
@@ -51,8 +35,14 @@ def createBannedWordList():
             line = tempLine
             bannedWordList.append(line)
     fp.close()
-
 createBannedWordList()
+
+def getPrefix(bot, message):
+    with open('Prefixes.json', 'r') as f:
+        prefixes = json.load(f)
+    return prefixes[str(message.guild.id)]
+
+bot = commands.Bot(command_prefix=getPrefix)
 
 @bot.event
 async def on_ready():
@@ -60,6 +50,22 @@ async def on_ready():
     print("I'm in " + str(len(bot.guilds)) + ' servers:')
     for server in bot.guilds:
         print('    ' + str(server))
+
+@bot.event
+async def on_guild_join(guild):
+    with open('Prefixes.json', 'r') as f:
+        prefixes = json.load(f)
+    prefixes[str(guild.id)] = '.'
+    with open('Prefixes.json', 'w') as f:
+        json.dump(prefixes, f, indent=4)
+
+@bot.event
+async def on_guild_remove(guild):
+    with open('Prefixes.json', 'r') as f:
+        prefixes = json.load(f)
+    prefixes.pop(str(guild.id))
+    with open('Prefixes.json', 'w') as f:
+        json.dump(prefixes, f, indent=4)
 
 @bot.event
 async def on_message(message):
@@ -134,8 +140,8 @@ async def createinvite():
 
 #   Responds with the latency time of the bot
 @bot.command()
-async def ping():
-    await message.channel.send('Pong! {0}ms'.format(round(bot.latency, 3)))
+async def ping(ctx):
+    await ctx.send('Pong! {}ms'.format(round(bot.latency, 3)))
 
 #   Kicks user that is tagged in the message
 @bot.command(pass_context=True)
@@ -152,7 +158,7 @@ async def kick_error(ctx, error):
         await ctx.send("That user doesn't exist.")
 
 #   Bans user that is tagged in the message
-@bot.command(pass_context=True)
+@bot.command()
 @commands.has_permissions(ban_members=True)
 async def ban(ctx, target: discord.Member, *, reason):
     await target.ban(reason=reason)
@@ -176,5 +182,14 @@ async def purge(ctx, limit: int):
 async def purge_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("You need to specify how many messages you want me to purge.")
+
+@bot.command()
+async def prefix(ctx, prefix):
+    with open('Prefixes.json', 'r') as f:
+        prefixes = json.load(f)
+    prefixes[str(ctx.guild.id)] = prefix
+    with open('Prefixes.json', 'w') as f:
+        json.dump(prefixes, f, indent=4)
+    await ctx.send("Changed server prefix to {}.".format(prefix))
 
 bot.run('XXX')

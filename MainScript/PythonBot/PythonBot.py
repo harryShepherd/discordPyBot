@@ -17,6 +17,10 @@ import random
 #
 #   This is a list of commands that I plan to add to the bot in the future:
 #
+#       coinflip - Flips a coin
+#       img - Type a keyword or phrase and it googles the top result in google images.
+#       Reactions - A range of commands that have a gif and an action e.g .slap would post a gif of someone getting slapped with '[user] was slapped by [user]!'.
+#       info - Gets information abouts the bot and spurts it out
 #       autorole - Set if you want to set a role to people when they join your server
 #       gag - Prevents a user from typing in any channel for x amount of seconds
 #       mute - Mutes and unmutes mentioned user
@@ -29,7 +33,6 @@ import random
 bannedWordList = []
 def createBannedWordList():
     with open('BannedWords.txt', 'r') as fp:
-        print("Opening BannedWords.txt in read mode")
         for cnt, line in enumerate(fp):
             tempLine = line.replace('\n', '')
             line = tempLine
@@ -47,12 +50,10 @@ bot = commands.Bot(command_prefix=getPrefix)
 @bot.event
 async def on_ready():
     print('Logged in as {0.user}'.format(bot))
-    print("I'm in " + str(len(bot.guilds)) + ' servers:')
-    for server in bot.guilds:
-        print('    ' + str(server))
 
 @bot.event
 async def on_guild_join(guild):
+    print("Joined guild: {}".format(guild))
     with open('Prefixes.json', 'r') as f:
         prefixes = json.load(f)
     prefixes[str(guild.id)] = '.'
@@ -61,6 +62,7 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_guild_remove(guild):
+    print("Left guild: {}".format(guild))
     with open('Prefixes.json', 'r') as f:
         prefixes = json.load(f)
     prefixes.pop(str(guild.id))
@@ -104,6 +106,10 @@ async def avatar(ctx, *, avamember : discord.Member=None):
     userAvatarUrl = avamember.avatar_url
     await ctx.send(userAvatarUrl)
 
+@avatar.error
+async def avatar_error(ctx, error):
+    await ctx.send("That user is invalid")
+
 
 #   Classic magic 8ball command
 @bot.command(aliases=['8ball'])
@@ -130,13 +136,20 @@ async def _8ball(ctx, *, question):
     "Yes – definitely.",
     "You may rely on it."]
 
-    await ctx.send("Your question: {0}\nThe Magic 8ball's answer: {1}".format(question, MagicBallPhrasesList[random.randint(0,(len(MagicBallPhrasesList)) - 1)] + " {0}".format(message.author.mention)))
+    await ctx.send("Your question: {0}\nThe Magic 8ball's answer: {1}".format(question, MagicBallPhrasesList[random.randint(0,(len(MagicBallPhrasesList)) - 1)] + " {0}".format(ctx.message.author.mention)))
   
+@_8ball.error
+async def _8ball_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("You need to give a question for the 8ball")
+    else:
+        await ctx.send("Something went wrong")
+
 #   Creates an invite that lasts 5 minutes and send it to the chat
 @bot.command()
-async def createinvite():
+async def createinvite(ctx):
        link = await message.channel.create_invite(max_age = 300)
-       await message.channel.send("Here is an instant invite to your server: " + str(link))
+       await ctx.send("Here is an instant invite to your server: " + str(link))
 
 #   Responds with the latency time of the bot
 @bot.command()

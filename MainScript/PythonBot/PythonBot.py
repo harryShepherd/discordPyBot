@@ -3,7 +3,7 @@
 #           Copyright (c) Harry Shepherd
 #       I don't really care about copyright I
 #       used this to make it feel like this code
-#       is actually important. (hint: it ain't)
+#               is actually important.
 #
 #******************************************************/
 import discord
@@ -18,27 +18,28 @@ import random
 #   This is a list of commands that I plan to add to the bot in the future:
 #
 #       coinflip - Flips a coin
+#       welcome - User can set a welcome message that the bot will dm to someone who joins the server
+#       poll - Creates a poll that the server can vote on
 #       img - Type a keyword or phrase and it googles the top result in google images.
+#       help - Customise the help command 
+#       joke - Tells a random joke from a database of jokes
 #       Reactions - A range of commands that have a gif and an action e.g .slap would post a gif of someone getting slapped with '[user] was slapped by [user]!'.
-#       info - Gets information abouts the bot and spurts it out
+#       botinfo - Gets information abouts the bot and spurts it out
+#       serverinfo - Gets information about the server
+#       userinfo - Gets information about a user
 #       autorole - Set if you want to set a role to people when they join your server
 #       gag - Prevents a user from typing in any channel for x amount of seconds
 #       mute - Mutes and unmutes mentioned user
+#       ungag - Ungags a user
+#       unmute - Unmutes a user
+#       unban - Unbans a user
 #       meirl - Gives a random top post from the me_irl subreddit
+#       reddit - Gives a random post from a specified subreddit
+#       aimeme - Creates a meme using ai | Not currently possible through api.
 #       subcount - Shows the subcount of a youtube channel
 #       urban - Search urban dictonary
 #       youtube - Searches youtube
 #       osu - Show your osu stats
-
-bannedWordList = []
-def createBannedWordList():
-    with open('BannedWords.txt', 'r') as fp:
-        for cnt, line in enumerate(fp):
-            tempLine = line.replace('\n', '')
-            line = tempLine
-            bannedWordList.append(line)
-    fp.close()
-createBannedWordList()
 
 def getPrefix(bot, message):
     with open('Prefixes.json', 'r') as f:
@@ -51,6 +52,7 @@ bot = commands.Bot(command_prefix=getPrefix)
 async def on_ready():
     print('Logged in as {0.user}'.format(bot))
 
+#   When the bot joins a new guild, it creates entries in the required json files
 @bot.event
 async def on_guild_join(guild):
     print("Joined guild: {}".format(guild))
@@ -59,7 +61,16 @@ async def on_guild_join(guild):
     prefixes[str(guild.id)] = '.'
     with open('Prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
+    f.close()
 
+    with open('BannedWords.json', 'r') as f:
+        bannedWords = json.load(f)
+    bannedWords[str(guild.id)] = ""
+    with open('BannedWords.json', 'w') as f:
+        json.dump(bannedWords, f, indent=4)
+    f.close()
+
+#   When the bot is removed from a guild, it removes the entries it has in the json files
 @bot.event
 async def on_guild_remove(guild):
     print("Left guild: {}".format(guild))
@@ -68,35 +79,25 @@ async def on_guild_remove(guild):
     prefixes.pop(str(guild.id))
     with open('Prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
+    f.close()
+
+    with open('BannedWords.json', 'r') as f:
+        prefixes = json.load(f)
+    prefixes.pop(str(guild.id))
+    with open('BannedWords.json', 'w') as f:
+        json.dump(prefixes, f, indent=4)
+    f.close()
 
 @bot.event
 async def on_message(message):
+    #   Reads the user's message and detects if there is a banned word in it. If so, it deletes the message
+    with open('BannedWords.json', 'r') as f:
+        bannedwords = json.load(f)
+        for word in bannedwords[str(message.guild.id)]:
+            if word in message.content.lower():
+                await message.delete()
+        f.close()
 
-    #   Used in most commands to make sure the bot listens to the person who initiated the command
-    def check(m):
-        return m and m.author == message.author
-
-
-    #   Deletes any messages containing banned words
-    for word in bannedWordList:
-        if word in message.content.lower():
-            print("Deleted message '{0.content}' due to containing banned phrase.".format(message))
-            await message.delete()
-
-    #   Adds words to naughty list 
-    #   This took so much longer than it needed to...
-    if message.content.startswith('.banword'):
-        await message.channel.send("What word are you banning {0.author.mention}?".format(message))
-        try:
-            chosenWord = await bot.wait_for('message', check=check, timeout = 10.0)
-        except asyncio.TimeoutError:
-            await message.channel.send("Took too long idiot")
-        else:
-            with open('BannedWords.txt', 'a+') as fp:
-                fp.write("\n{0}".format(chosenWord.content))
-            fp.close()
-            await message.channel.send("Added {0} to the list of banned words.".format(chosenWord.content))
-            BannedWordList = []
     #   This allows the bot to listen to commands
     await bot.process_commands(message)
 
@@ -109,7 +110,6 @@ async def avatar(ctx, *, avamember : discord.Member=None):
 @avatar.error
 async def avatar_error(ctx, error):
     await ctx.send("That user is invalid")
-
 
 #   Classic magic 8ball command
 @bot.command(aliases=['8ball'])
@@ -196,6 +196,7 @@ async def purge_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("You need to specify how many messages you want me to purge.")
 
+#   Changes the prefix for the specified server
 @bot.command()
 async def prefix(ctx, prefix):
     with open('Prefixes.json', 'r') as f:
@@ -203,6 +204,24 @@ async def prefix(ctx, prefix):
     prefixes[str(ctx.guild.id)] = prefix
     with open('Prefixes.json', 'w') as f:
         json.dump(prefixes, f, indent=4)
+    f.close()
     await ctx.send("Changed server prefix to {}.".format(prefix))
+
+@prefix.error
+async def prefix_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("You need to specify a prefix to set")
+    else:
+        await ctx.send("Something went wrong.")
+
+@bot.command()
+@commands.has_permissions(manage_messages=True)
+async def banword(ctx, word):
+    with open('BannedWords.json','r') as f:
+        bannedwords = json.load(f)
+    bannedwords[str(ctx.guild.id)].append(word.lower())
+    with open('BannedWords.json' ,'w') as f:
+        json.dump(bannedwords, f, indent=4)
+    f.close()
 
 bot.run('XXX')

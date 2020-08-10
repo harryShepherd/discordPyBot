@@ -65,7 +65,7 @@ async def on_guild_join(guild):
 
     with open('BannedWords.json', 'r') as f:
         bannedWords = json.load(f)
-    bannedWords[str(guild.id)] = ""
+    bannedWords[str(guild.id)] = []
     with open('BannedWords.json', 'w') as f:
         json.dump(bannedWords, f, indent=4)
     f.close()
@@ -91,12 +91,13 @@ async def on_guild_remove(guild):
 @bot.event
 async def on_message(message):
     #   Reads the user's message and detects if there is a banned word in it. If so, it deletes the message
-    with open('BannedWords.json', 'r') as f:
-        bannedwords = json.load(f)
-        for word in bannedwords[str(message.guild.id)]:
-            if word in message.content.lower():
-                await message.delete()
-        f.close()
+    if not message.author.guild_permissions.administrator:
+        with open('BannedWords.json', 'r') as f:
+            bannedwords = json.load(f)
+            for word in bannedwords[str(message.guild.id)]:
+                if word in message.content.lower():
+                    await message.delete()
+            f.close()
 
     #   This allows the bot to listen to commands
     await bot.process_commands(message)
@@ -147,6 +148,7 @@ async def _8ball_error(ctx, error):
 
 #   Creates an invite that lasts 5 minutes and send it to the chat
 @bot.command()
+#@commands.has_permissions(create_invite=True)
 async def createinvite(ctx):
        link = await message.channel.create_invite(max_age = 300)
        await ctx.send("Here is an instant invite to your server: " + str(link))
@@ -214,6 +216,7 @@ async def prefix_error(ctx, error):
     else:
         await ctx.send("Something went wrong.")
 
+#   Allows the user to add a word to the ban list for the server
 @bot.command()
 @commands.has_permissions(manage_messages=True)
 async def banword(ctx, word):
@@ -223,5 +226,38 @@ async def banword(ctx, word):
     with open('BannedWords.json' ,'w') as f:
         json.dump(bannedwords, f, indent=4)
     f.close()
+    await ctx.send("I've banned the word.")
+
+
+@banword.error
+async def banword_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("You need to say a word to ban")
+    elif isinstance(error, commands.MissingPermissions):
+        await ctx.send("You dont have the permissions to do that.")
+    else:
+        await ctx.send("Something went wrong.")
+
+#   Allows the user to remove a word from the ban list for the server
+@bot.command()
+@commands.has_permissions(manage_messages=True)
+async def unbanword(ctx, word: str):
+    with open('BannedWords.json', 'r') as f:
+        banwords = json.load(f)
+        banwords[str(ctx.guild.id)].remove(word.lower())
+    f.close()
+    with open('BannedWords.json', 'w') as f:
+        json.dump(banwords, f, indent=4)
+    f.close()
+    await ctx.send("Unbanned the word {}.".format(word.lower()))
+
+@unbanword.error
+async def unbanword_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("You need to say a word to unban")
+    elif isinstance(error, commands.MissingPermissions):
+        await ctx.send("You dont have the permissions to do that.")
+    else:
+        await ctx.send("Something went wrong.")
 
 bot.run('XXX')

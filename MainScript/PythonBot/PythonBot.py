@@ -13,6 +13,8 @@ import json
 import asyncio
 import time
 import random
+
+startTime = time.time()
 #                                       TODO:   
 #
 #   This is a list of commands that I plan to add to the bot in the future:
@@ -26,7 +28,6 @@ import random
 #       Reactions - A range of commands that have a gif and an action e.g .slap would post a gif of someone getting slapped with '[user] was slapped by [user]!'.
 #       botinfo - Gets information abouts the bot and spurts it out
 #       serverinfo - Gets information about the server
-#       userinfo - Gets information about a user
 #       autorole - Set if you want to set a role to people when they join your server
 #       gag - Prevents a user from typing in any channel for x amount of seconds
 #       mute - Mutes and unmutes mentioned user
@@ -110,7 +111,7 @@ async def avatar(ctx, *, avamember : discord.Member=None):
 
 @avatar.error
 async def avatar_error(ctx, error):
-    await ctx.send("That user is invalid")
+    await ctx.send("That user is invalid.")
 
 #   Classic magic 8ball command
 @bot.command(aliases=['8ball'])
@@ -142,9 +143,9 @@ async def _8ball(ctx, *, question):
 @_8ball.error
 async def _8ball_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("You need to give a question for the 8ball")
+        await ctx.send("You need to give a question for the 8ball.")
     else:
-        await ctx.send("Something went wrong")
+        await ctx.send("Something went wrong.")
 
 #   Creates an invite that lasts 5 minutes and send it to the chat
 @bot.command()
@@ -212,7 +213,7 @@ async def prefix(ctx, prefix):
 @prefix.error
 async def prefix_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("You need to specify a prefix to set")
+        await ctx.send("You need to specify a prefix to set.")
     else:
         await ctx.send("Something went wrong.")
 
@@ -232,7 +233,7 @@ async def banword(ctx, word):
 @banword.error
 async def banword_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("You need to say a word to ban")
+        await ctx.send("You need to say a word to ban.")
     elif isinstance(error, commands.MissingPermissions):
         await ctx.send("You dont have the permissions to do that.")
     else:
@@ -254,10 +255,64 @@ async def unbanword(ctx, word: str):
 @unbanword.error
 async def unbanword_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("You need to say a word to unban")
+        await ctx.send("You need to say a word to unban.")
     elif isinstance(error, commands.MissingPermissions):
         await ctx.send("You dont have the permissions to do that.")
     else:
         await ctx.send("Something went wrong.")
+
+#   Shows information about a given user
+@bot.command()
+async def userinfo(ctx, user: discord.Member):
+    embed=discord.Embed(title=user.nick, color=0x1aa018)
+    embed.set_thumbnail(url=user.avatar_url)
+    embed.add_field(name='Member Information', value='**Display Name**: {}\n**Joined At**: {}\n**Roles**: {}'.format(user.display_name, user.joined_at, user.top_role), inline=False)
+    embed.add_field(name='User Information', value='**ID**: {}\n**Username**: {}\n**Discriminator**: {}\n**Created At**: {}'.format(user.id, user.name, user.discriminator, user.created_at.strftime("%A, %B %d %Y @ %H:%M:%S %p")), inline=False)
+    #   The currently playing part would say 'None' if a user isn't playing anything with sounds off, so I changed it to say 'Nothing'
+    if str(user.activity) == "None":
+        embed.add_field(name='**Currently Playing**', value='Nothing', inline=False)
+    else:
+        embed.add_field(name='**Currently Playing**', value=user.activity, inline=False)
+    await ctx.send(embed=embed)
+
+@userinfo.error
+async def userinfo_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("You need to specify a user.")
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send("Could not find that user.")
+    else:
+        await ctx.send("Something went wrong.")
+
+#   Shows information about the bot
+@bot.command()
+async def botinfo(ctx):   
+    s = time.time() - startTime
+    d = int(s / 60 / 60 / 24 % 365)
+    h = int(s / 60 / 60 % 24)   
+    m =int(s / 60 % 60)    
+    sec = int(s % 60) 
+    embed=discord.Embed(title=None, color=0x1aa018)
+    embed.set_thumbnail(url=bot.user.avatar_url)
+    embed.add_field(name='Bot Info', value='**Bot Name**: {}\n**Servers**: {}\n**Channels**: {}\n**Created On**: {}\n**Uptime**: {} d {} h {} m {} s'.format(bot.user.name, len(bot.guilds), len(ctx.message.guild.text_channels + ctx.message.guild.voice_channels), bot.user.created_at.strftime("%A, %B %d %Y @ %H:%M:%S %p"), d, h, m, sec), inline=True)   
+    await ctx.send(embed=embed)
+
+@botinfo.error
+async def botinfo_error(ctx, error):
+    await ctx.send("Something went wrong.")
+    await ctx.send(error)
+
+#   Shows information about the server the user is in
+@bot.command()
+async def serverinfo(ctx):
+    embed=discord.Embed(title=None, color=0x1aa018)
+    embed.set_thumbnail(url=ctx.guild.icon_url)
+    embed.add_field(name='Guild Info', value='**Created On**: {}\n**Owner**: {}\n**Members**: {}\n**Channels**: {}\n**Region**: {}\n**Verification Level**: {}'.format(ctx.guild.created_at.strftime("%A, %B %d %Y @ %H:%M:%S %p"), ctx.guild.owner, ctx.guild.member_count, len(ctx.guild.voice_channels) + len(ctx.guild.text_channels), str(ctx.guild.region).capitalize(), str(ctx.guild.verification_level).capitalize()), inline=True)   
+    await ctx.send(embed=embed)
+
+@serverinfo.error
+async def serverinfo_error(ctx, error):
+    await ctx.send("Something went wrong.")
+    await ctx.send(error)
 
 bot.run('XXX')

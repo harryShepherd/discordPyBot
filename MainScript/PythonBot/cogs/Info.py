@@ -1,4 +1,6 @@
 import discord
+from tweepy import OAuthHandler
+from tweepy import API
 from discord.ext import commands
 import datetime
 import time
@@ -6,6 +8,18 @@ import os
 import sys
 
 startTime = time.time()
+
+""" Tweepy Setup """
+consumer_key = ""
+consumer_secret = ""
+access_token = ""
+access_token_secret = ""
+
+auth = OAuthHandler(consumer_key, consumer_secret)
+auth.set_access_token(access_token, access_token_secret)
+auth_api = API(auth)
+""""#############"""
+
 
 if __name__ == '__main__':
     print("Tried to run {} as main script, despite it being a cog! Terminating script.".format(__file__))
@@ -70,7 +84,6 @@ class Info(commands.Cog):
     @botinfo.error
     async def botinfo_error(self, ctx, error):
         await ctx.send("Something went wrong.")
-        await ctx.send(error)
 
     @commands.command()
     async def serverinfo(self, ctx):
@@ -83,7 +96,19 @@ class Info(commands.Cog):
     @serverinfo.error
     async def serverinfo_error(self, ctx, error):
         await ctx.send("Something went wrong.")
-        await ctx.send(error)
+
+    @commands.command()
+    async def twitterinfo(selfself, ctx, target):
+        """Shows information about a twitter user"""
+        item = auth_api.get_user(target)
+        embed=discord.Embed(title=None, color=0x1aa018)
+        embed.set_thumbnail(url=item.profile_image_url)
+        embed.add_field(name=target + "'s info", value="**Name**: {}\n**Tag**: {}\n**Bio**: {}\n**Statuses Count**: {}\n**Following Count**: {}\n**Followers Count**: {}".format(item.name, item.screen_name, item.description, str(item.statuses_count), str(item.friends_count), str(item.followers_count)))
+        await ctx.send(embed=embed)
+
+    @twitterinfo.error
+    async def twitterinfo_error(self, ctx, error):
+        await ctx.send("Something went wrong. Check that the user you specified exists.")
 
 def setup(client):
     client.add_cog(Info(client))

@@ -3,11 +3,12 @@ from discord.ext import commands
 from googletrans import Translator
 from threading import Timer
 import datetime
-import os
 import json
 import asyncio
 import time
 import random
+import os
+import sys
 
 startTime = time.time()
 

@@ -21,8 +21,6 @@ import random
 #
 #   This is a list of commands that I plan to add to the bot in the future:
 #
-#       PRIORITY - Convert all commands to cogs
-#
 #       welcome - User can set a welcome message that the bot will dm to someone who joins the server
 #       poll - Creates a poll that the server can vote on
 #       img - Type a keyword or phrase and it googles the top result in google images.

@@ -5,6 +5,7 @@ from threading import Timer
 import datetime
 import json
 import asyncio
+import requests
 import time
 import random
 import os
@@ -66,6 +67,21 @@ class Fun(commands.Cog):
             await ctx.send("The result was heads!")
         else:
             await ctx.send("The result was tails!")
+
+    @commands.command()
+    async def dadjoke(self, ctx):
+        """Sends a funny dad joke"""
+        url = "https://dad-jokes.p.rapidapi.com/random/joke"
+        headers = {
+            'x-rapidapi-key': "8b569c3bc4msh24227fe3fc6bac1p10ebacjsnd186354009c1",
+            'x-rapidapi-host': "dad-jokes.p.rapidapi.com"
+        }
+        response = requests.request("GET", url, headers=headers)
+        parsed_response = json.loads(response.text)
+        await ctx.send(parsed_response["body"][0]["setup"])
+        await asyncio.sleep(1)
+        await ctx.send(parsed_response["body"][0]["punchline"])
+
 
 def setup(client):
     client.add_cog(Fun(client))

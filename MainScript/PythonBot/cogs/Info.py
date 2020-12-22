@@ -10,10 +10,10 @@ import sys
 startTime = time.time()
 
 """ Tweepy Setup """
-consumer_key = ""
-consumer_secret = ""
-access_token = ""
-access_token_secret = ""
+consumer_key = "hE5bH8axqr9AHtjOnKO4VXthg"
+consumer_secret = "SbOV7ubeJN7Xd8tqoqcyU6fVhKdJwB12EEioupRw2SeKlI71CU"
+access_token = "911590882553602051-hTcNwFjcFTHEq5CGi9BpwDVFWMldfzo"
+access_token_secret = "SuOiAMj4eTA9GHU40BedeCP5Gg4F7Nt2sDmCv3y4WXtg7"
 
 auth = OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)

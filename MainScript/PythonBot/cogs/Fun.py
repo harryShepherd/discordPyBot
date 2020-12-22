@@ -73,7 +73,7 @@ class Fun(commands.Cog):
         """Sends a funny dad joke"""
         url = "https://dad-jokes.p.rapidapi.com/random/joke"
         headers = {
-            'x-rapidapi-key': "8b569c3bc4msh24227fe3fc6bac1p10ebacjsnd186354009c1",
+            'x-rapidapi-key': "",
             'x-rapidapi-host': "dad-jokes.p.rapidapi.com"
         }
         response = requests.request("GET", url, headers=headers)

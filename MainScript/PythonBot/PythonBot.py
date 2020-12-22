@@ -107,4 +107,4 @@ async def on_message(message):
     #   This allows the bot to listen to commands
     await bot.process_commands(message)
 
-bot.run('NzQ1Mzk0MTM1ODgzODQxNTU5.XzxIYg.PrDDJJ5m6hf0oDqL8QHppospNSM')
+bot.run('')

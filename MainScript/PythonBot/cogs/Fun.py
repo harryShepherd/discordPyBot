@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from googletrans import Translator
 from threading import Timer
 import datetime
 import json
@@ -73,7 +72,7 @@ class Fun(commands.Cog):
         """Sends a funny dad joke"""
         url = "https://dad-jokes.p.rapidapi.com/random/joke"
         headers = {
-            'x-rapidapi-key': "",
+            'x-rapidapi-key': "XXX",
             'x-rapidapi-host': "dad-jokes.p.rapidapi.com"
         }
         response = requests.request("GET", url, headers=headers)

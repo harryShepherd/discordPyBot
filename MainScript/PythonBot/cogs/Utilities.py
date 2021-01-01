@@ -1,9 +1,12 @@
+import json
+
 import discord
 from discord.ext import commands
 import datetime
 import time
 import os
 import sys
+from googletrans import Translator
 
 startTime = time.time()
 

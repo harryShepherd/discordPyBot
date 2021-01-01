@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
+from discord.utils import get
 import datetime
+import asyncio
 import time
 import json
 import os
@@ -23,9 +25,9 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.has_permissions(create_instant_invite=True)
     async def createinvite(self, ctx):
-           """Creates an invite that lasts 5 minutes and send it to the chat"""
-           link = await ctx.channel.create_invite(max_age = 300)
-           await ctx.send("Here is an instant invite to your server: " + str(link))
+       """Creates an invite that lasts 5 minutes and send it to the chat"""
+       link = await ctx.channel.create_invite(max_age = 300)
+       await ctx.send("Here is an instant invite to your server: " + str(link))
 
     @commands.command(pass_context=True)
     @commands.has_permissions(kick_members=True)
@@ -72,7 +74,7 @@ class Moderation(commands.Cog):
             await ctx.send("You need to specify how many messages you want me to purge.")
 
     @commands.command()
-    async def prefix(ctx, prefix):
+    async def prefix(self, ctx, prefix: str):
         """Changes the prefix for the specified server"""
         with open(os.path.join(os.getcwd(), 'Prefixes.json'), 'r') as f:
             prefixes = json.load(f)
@@ -80,13 +82,17 @@ class Moderation(commands.Cog):
         with open(os.path.join(os.getcwd(), 'Prefixes.json'), 'w') as f:
             json.dump(prefixes, f, indent=4)
         f.close()
-        await ctx.send("Changed server prefix to {}.".format(prefix))
+        await ctx.send("Changed server prefix to `{}`.".format(prefix))
         print("Changed prefix to: '{}' in guild '{}' - {}".format(prefix, ctx.message.guild, datetime.datetime.now()))
 
     @prefix.error
-    async def prefix_error(ctx, error):
+    async def prefix_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("You need to specify a prefix to set.")
+            prefix = ""
+            with open(os.path.join(os.getcwd(), 'Prefixes.json'), 'r') as f:
+                prefixes = json.load(f)
+            prefix = prefixes[str(ctx.guild.id)]
+            await ctx.send("The prefix for this server is `{}`".format(prefix))
         else:
             await ctx.send("Something went wrong.")
 
@@ -133,6 +139,131 @@ class Moderation(commands.Cog):
             await ctx.send("You dont have the permissions to do that.")
         else:
             await ctx.send("Something went wrong.")
+
+    @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    async def setmuterole(self, ctx, role: discord.Role):
+        """Allows the user to select a role which will be used for muting other users"""
+        with open('Roles.json', 'r') as f:
+            roles = json.load(f)
+        f.close()
+        roles[str(ctx.guild.id)]["Mute"] = role.id
+        with open('Roles.json', 'w') as f:
+            json.dump(roles, f, indent=4)
+        f.close()
+
+    @setmuterole.error
+    async def setmuterole_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("You need to specify a role.")
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send("You dont have permissions to do that.")
+        else:
+            await ctx.send("Something went wrong")
+
+    @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    async def mute(self, ctx, target: discord.Member, duration):
+        """Mutes a specified user for a duration"""
+        with open('Roles.json', 'r') as f:
+            roles = json.load(f)
+        f.close()
+        roleid = roles[str(ctx.guild.id)]["Mute"]
+        print(roleid)
+        await target.add_roles(get(ctx.guild.roles, id=roleid))
+        await asyncio.sleep(int(duration))
+        await target.remove_roles(get(ctx.guild.roles, id=roleid))
+
+    @mute.error
+    async def mute_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("You forgot to include a user and/or duration.")
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send("You dont have permissions to do that.")
+        else:
+            await ctx.send("Something went wrong")
+
+    @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    async def unmute(self, ctx, target: discord.Member):
+        """Unmutes a specified user"""
+        with open('Roles.json', 'r') as f:
+            roles = json.load(f)
+        f.close()
+        roleid = roles[str(ctx.guild.id)]["Mute"]
+        await target.remove_roles(get(ctx.guild.roles, id=roleid))
+
+    @unmute.error
+    async def unmute_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("You forgot to include a user.")
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send("You dont have permissions to do that.")
+        else:
+            await ctx.send("Something went wrong")
+
+    @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    async def setgagrole(self, ctx, role: discord.Role):
+        """Allows the user to select a role which will be used for muting other users"""
+        with open('Roles.json', 'r') as f:
+            roles = json.load(f)
+        f.close()
+        roles[str(ctx.guild.id)]["Gag"] = role.id
+        with open('Roles.json', 'w') as f:
+            json.dump(roles, f, indent=4)
+        f.close()
+
+    @setgagrole.error
+    async def setgagrole_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("You need to specify a role.")
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send("You dont have permissions to do that.")
+        else:
+            await ctx.send("Something went wrong")
+            print(error)
+
+    @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    async def gag(self, ctx, target: discord.Member, duration):
+        """Mutes a specified user for a duration"""
+        with open('Roles.json', 'r') as f:
+            roles = json.load(f)
+        f.close()
+        roleid = roles[str(ctx.guild.id)]["Gag"]
+        print(roleid)
+        await target.add_roles(get(ctx.guild.roles, id=roleid))
+        await asyncio.sleep(int(duration))
+        await target.remove_roles(get(ctx.guild.roles, id=roleid))
+
+    @gag.error
+    async def gag_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("You forgot to include a user and/or duration.")
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send("You dont have permissions to do that.")
+        else:
+            await ctx.send("Something went wrong")
+
+    @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    async def ungag(self, ctx, target: discord.Member):
+        """Unmutes a specified user"""
+        with open('Roles.json', 'r') as f:
+            roles = json.load(f)
+        f.close()
+        roleid = roles[str(ctx.guild.id)]["Gag"]
+        await target.remove_roles(get(ctx.guild.roles, id=roleid))
+
+    @ungag.error
+    async def ungag_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("You forgot to include a user.")
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send("You dont have permissions to do that.")
+        else:
+            await ctx.send("Something went wrong")
 
 def setup(client):
     client.add_cog(Moderation(client))

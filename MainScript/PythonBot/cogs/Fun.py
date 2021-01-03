@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import praw
 from threading import Timer
 import datetime
 import json

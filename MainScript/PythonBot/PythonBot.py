@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.utils import get
 from googletrans import Translator
 from pyasn1.compat.octets import null
 from threading import Timer
@@ -10,10 +11,12 @@ import asyncio
 import time
 import random
 
-
 #                                       TODO:
 #
 #   This is a list of commands that I plan to add to the bot in the future:
+#
+#       Test on_member_join method to see if it actually works
+#
 #
 #       welcome - User can set a welcome message that the bot will dm to someone who joins the server
 #       poll - Creates a poll that the server can vote on
@@ -21,11 +24,8 @@ import random
 #       help - Customise the help command
 #       Reactions - A range of commands that have a gif and an action
 #                   e.g .slap would post a gif of someone getting slapped with '[user] was slapped by [user]!'.
-#       autorole - Set if you want to set a role to people when they join your server
-#       unban - Unbans a user
 #       meirl - Gives a random top post from the me_irl subreddit
 #       reddit - Gives a random post from a specified subreddit
-#       aimeme - Creates a meme using ai | Not currently possible through api.
 #       subcount - Shows the subcount of a youtube channel
 #       urban - Search urban dictonary
 #       youtube - Searches youtube
@@ -87,7 +87,8 @@ async def on_guild_join(guild):
         roles = json.load(f)
     roles[str(guild.id)] = {
         "Mute": null,
-        "Gag": null
+        "Gag": null,
+        "OnJoin": null
     }
     with open('Roles.json', 'w') as f:
         json.dump(roles, f, indent=4)
@@ -111,6 +112,17 @@ async def on_guild_remove(guild):
         json.dump(prefixes, f, indent=4)
     f.close()
 
+@bot.event
+async def on_member_join(member):
+    with open('Roles.json', 'r') as f:
+        roles = json.load(f)
+    f.close()
+    roleid = roles[str(member.server.id)]["OnJoin"]
+    # Check to see if there is an OnJoin role
+    if not roleid:
+        pass
+    else:
+        await member.add_roles(get(member.server.roles, id=roleid))
 
 @bot.event
 async def on_message(message):

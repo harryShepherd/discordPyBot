@@ -61,6 +61,23 @@ class Moderation(commands.Cog):
             await ctx.send("That user doesn't exist.")
 
     @commands.command()
+    @commands.has_permissions(ban_members=True)
+    async def unban(self, ctx, id: int):
+        """Unbans user whos id is in the message"""
+        target = await self.client.fetch_user(id)
+        await ctx.guild.unban(target)
+        await ctx.send("User {0} was unbanned from the server.".format(target))
+        print("User '{}' was unbanned from guild '{}' - {}".format(target, ctx.message.guild, datetime.datetime.now()))
+
+
+    @ban.error
+    async def unban_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("A reason is required.")
+        elif isinstance(error, commands.BadArgument):
+            await ctx.send("That user doesn't exist.")
+
+    @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def purge(self, ctx, limit: int):
         """Deletes x amount of messages from the channel the user uses this command in"""
@@ -264,6 +281,29 @@ class Moderation(commands.Cog):
             await ctx.send("You dont have permissions to do that.")
         else:
             await ctx.send("Something went wrong")
+
+    @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    async def setjoinrole(self, ctx, role: discord.Role):
+        """Allows the user to select a role which is applied to anyone who join a server"""
+        with open('Roles.json') as f:
+            roles = json.load(f)
+        f.close()
+        roles[str(ctx.guild.id)]["OnJoin"] = role.id
+        with open('Roles.json', 'w') as f:
+            json.dump(roles, f, indent=4)
+        f.close()
+
+    @setjoinrole.error
+    async def setjoinrole_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send("You need to specify a role.")
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send("You dont have permissions to do that.")
+        else:
+            await ctx.send("Something went wrong")
+            print(error)
+
 
 def setup(client):
     client.add_cog(Moderation(client))
